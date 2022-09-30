@@ -98,7 +98,7 @@ class HandOfCards:
     def __init__(self, card_list):
         if len(card_list) != 7:
             raise ValueError
-        self._card_list = sorted(card_list, key=lambda s: convert(s.rank), reverse=True)
+        # self._card_list = sorted(card_list, key=lambda s: convert(s.rank), reverse=True)
         self._rank_counter = Counter(card.rank for card in self._card_list).most_common(3)
         self._suit_counter = Counter(card.suit for card in self._card_list).most_common(1)
         self.type = dict.fromkeys(self.hand_type, value=False)
