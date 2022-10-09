@@ -22,6 +22,39 @@ class Player:
     def cash_out(self, value):
         pass
 
+    def balance_change(self, value):
+        try:
+            self.balance += value
+        except ValueError:
+            raise ValueError
+
+
+class Seat:
+    def __init__(self, table, number):
+        self.table = table
+        self.number = number
+
+        self.player = None
+        self.chips = 0
+        self.active = False
+        # TODO: violating the DRY rule, still trying to find a way to circumvent the warning
+
+    def clear_seat(self):
+        self.player = None
+        self.chips = 0
+        self.active = False
+
+    def add_player(self, player, chips, active=True):
+        self.player = player
+        self.chips = chips
+        self.active = active
+
+    def rm_player(self):
+        if self.player is None:
+            raise ValueError
+        self.player.balance_change(self.chips)
+        self.clear_seat()
+
 
 class Table:
     def __init__(self, name, password, max_player=9, sb=5, chips=1000, private=False):
@@ -31,15 +64,13 @@ class Table:
         self.private = private
         self.sb = sb
         self.initial_chips = chips
-        # self.player_set = set()
-        self.seat_status = dict.fromkeys(range(max_player), value=False)
+        self.seats = [Seat(self, i) for i in range(self.max_player)]
 
     def add_player(self, player, chips, position):
-        self.seat_status[position] = [player, chips]
-        # self.player_set.add(player)
+        self.seats[position].add_player(player, chips)
 
-    def remove_player(self, player, position):
-        # self.player_set.remove(player)
+    def rm_player(self, player, position):
+        self.seats[position].rm_player()
 
     def game_start(self):
         """
@@ -66,21 +97,22 @@ class Table:
     def bet_round(self, dq):
         pass
 
-    def clear(self):
+    def clear_table(self):
         pass
 
     def run(self, sleep_time=3, recycle_time=300):
         idle_count = 0
         while True:
-            if self.player_set:
+            seat_not_empty = [seat.player is not None for seat in self.seats]
+            if any(seat_not_empty):
                 idle_count = 0
-                if len(self.player_set) > 1:
+                if sum(seat_not_empty) > 1:
                     self.game_start()
                 else:
                     time.sleep(sleep_time)
             else:
                 if idle_count > recycle_time:
-                    self.clear()
+                    self.clear_table()
                 else:
                     idle_count += sleep_time
                     time.sleep(sleep_time)
