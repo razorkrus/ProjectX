@@ -5,10 +5,16 @@ from card import FrenchDeck
 
 
 class Player:
-    def __init__(self, name, password, balance):
+    """
+    Player's name should be unique across platform.
+    And Player do not need to deal with account verification details.
+    It should be left to the verification system.
+    Player's instance should be created only after verification, and could be recycled after player quits.
+    """
+    def __init__(self, name, balance):
         self.name = name
-        self.password = password
         self.balance = balance
+        # FIXME: make player's balance non-negative
 
     def __hash__(self):
         return hash(self.name)
@@ -17,10 +23,10 @@ class Player:
         return hash(self) == hash(other)
 
     def replenish(self, value):
-        pass
+        self.balance_change(value)
 
     def cash_out(self, value):
-        pass
+        self.balance_change(-value)
 
     def balance_change(self, value):
         try:
@@ -55,6 +61,9 @@ class Seat:
         self.player.balance_change(self.chips)
         self.clear_seat()
 
+    def bet(self, amount):
+        pass
+
 
 class Table:
     def __init__(self, name, password, max_player=9, sb=5, chips=1000, private=False):
@@ -72,6 +81,9 @@ class Table:
     def rm_player(self, player, position):
         self.seats[position].rm_player()
 
+    def make_deque(self, sb_position):
+        return 1
+
     def game_start(self):
         """
         Should I put the player status check inside this function?
@@ -81,7 +93,8 @@ class Table:
         Keep it simple. Just deal with the main routine of game please.
         :return: None
         """
-        game_dq = deque()
+        # game_dq = deque()
+        game_dq = self.make_deque()
         rounds = 'pre_flop flop turn river'.split()
 
         for r in rounds:
