@@ -1,21 +1,18 @@
 import random
-import logging
-# import argparse
-from collections import namedtuple, abc, Counter
+from collections import abc, Counter
 from functools import partial
-from dataclasses import dataclass
-
-
-# suit_symbol = {'spades': chr(0x2660),
-#                'diamonds': chr(0x2662),
-#                'clubs': chr(0x2663),
-#                'hearts': chr(0x2661)}
 
 
 class Card:
-    symbol_list = [chr(0x2660 + i) for i in range(4)]
-    suit_list = 'spades hearts diamonds clubs'.split()
-    suit_symbol = dict(zip(suit_list, symbol_list))
+    # unicode symbols for suits
+    suit_symbol = {'spades': chr(0x2660),
+                   'diamonds': chr(0x2662),
+                   'clubs': chr(0x2663),
+                   'hearts': chr(0x2661)}
+
+    # symbol_list = [chr(0x2660 + i) for i in range(4)]
+    # suit_list = 'spades hearts diamonds clubs'.split()
+    # suit_symbol = dict(zip(suit_list, symbol_list))
 
     def __init__(self, rank, suit):
         self.rank: str = rank
@@ -60,6 +57,7 @@ class FrenchDeck(abc.MutableSequence):
         self._randomizer.shuffle(self._cards)
 
 
+# convert rank to value
 def convert(rank, ace=True):
     match rank:
         case 'A':
@@ -74,6 +72,7 @@ def convert(rank, ace=True):
             return int(rank)
 
 
+# convert value to rank
 def convert_back(value):
     match value:
         case 14:
@@ -92,26 +91,41 @@ convert1 = partial(convert, ace=False)
 
 
 class HandOfCards:
-    hand_type = ('royal_flush straight_flush four_of_a_kind full_house '
-                 'flush straight three_of_a_kind two_pairs one_pair high_card').split()
+    hand_type = ('royal_flush',
+                 'straight_flush',
+                 'four_of_a_kind',
+                 'full_house',
+                 'flush',
+                 'straight',
+                 'three_of_a_kind',
+                 'two_pairs',
+                 'one_pair',
+                 'high_card')
 
     def __init__(self, card_list):
         if len(card_list) != 7:
             raise ValueError
-        # self._card_list = sorted(card_list, key=lambda s: convert(s.rank), reverse=True)
+        self._card_list = sorted(card_list, key=lambda s: convert(s.rank), reverse=True)
         self._rank_counter = Counter(card.rank for card in self._card_list).most_common(3)
         self._suit_counter = Counter(card.suit for card in self._card_list).most_common(1)
-        self.type = dict.fromkeys(self.hand_type, value=False)
+        self.type = dict.fromkeys(self.hand_type, False)
         self.set_type()
 
     def set_type(self):
-        has_straight, straight_tail = self.find_straight()
+        has_straight, straight_tail_value = self.find_straight()
+
+        # check for straight
         if has_straight:
-            straight_tail = convert_back(straight_tail)
+            # straight_tail_rank = convert_back(straight_tail_value)
             self.type['straight'] = True
+
+        # check for flush
         if self._suit_counter[0][1] >= 5:
             self.type['flush'] = True
-        match [v for _, v in self._rank_counter]:
+            #todo: consider saving extra info about flush
+
+        # check for multiple rank cards
+        match [c for r, c in self._rank_counter]:
             case [4, _] | [4, _, _]:
                 self.type['four_of_a_kind'] = True
             case [3, 3, 1] | [3, 2, _]:
@@ -124,6 +138,11 @@ class HandOfCards:
                 self.type['one_pair'] = True
             case _:
                 self.type['high_card'] = True
+
+        # check for straight flush
+        if self.type['straight'] and self.type['flush']:
+            #todo: royal flush
+            pass
 
     def has_ace(self):
         return 'A' in {card.rank for card in self._card_list}
@@ -141,7 +160,12 @@ class HandOfCards:
 
 
 if __name__ == '__main__':
-    x = HandOfCards(
-        [Card('A', 'spades'), Card('A', 'hearts'), Card('A', 'clubs'), Card('4', 'clubs'), Card('5', 'clubs'),
-         Card('2', 'clubs'), Card('3', 'clubs')])
+    sample_cards = [Card('A', 'spades'),
+                    Card('A', 'hearts'),
+                    Card('A', 'clubs'),
+                    Card('4', 'clubs'),
+                    Card('5', 'clubs'),
+                    Card('2', 'clubs'),
+                    Card('3', 'clubs')]
+    x = HandOfCards(sample_cards)
     print(x.type)
